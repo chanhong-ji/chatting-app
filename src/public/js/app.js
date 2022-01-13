@@ -21,6 +21,9 @@ roomPart.hidden = true;
 
 function onLeave() {
   socket.emit("leave_room", roomName);
+  roomPart.hidden = true;
+  newPart.hidden = false;
+  searchPart.hidden = false;
   roomName = null;
 }
 
@@ -44,6 +47,9 @@ nicknameForm.addEventListener("submit", onNicknameSubmit);
 
 function showRoom(userCount) {
   roomTitle.innerText = `${roomName}(${userCount})`;
+  newPart.hidden = true;
+  searchPart.hidden = true;
+  roomPart.hidden = false;
 }
 
 function onNewSubmit(event) {
@@ -51,9 +57,6 @@ function onNewSubmit(event) {
   const input = newForm.querySelector("input");
   roomName = input.value;
   socket.emit("enter_room", roomName, showRoom); //여기다 done 필요한곳
-  newPart.hidden = true;
-  searchPart.hidden = true;
-  roomPart.hidden = false;
 }
 
 newForm.addEventListener("submit", onNewSubmit);
@@ -93,15 +96,16 @@ socket.on("welcome", (nickname, userCount) => {
   showRoom(userCount);
 });
 
-socket.on("bye", (nickname) => {
+socket.on("bye", (nickname, userCount) => {
   paintMessage(`${nickname} has left`);
+  roomTitle.innerText = `${roomName}(${userCount})`;
 });
 
 socket.on("message", (nickname, text) => {
   paintMessage(`${nickname}: ${text}`);
 });
 
-socket.on("list_room", (rooms) => {
+socket.on("room_change", (rooms) => {
   rooms.map((room) => {
     const li = document.createElement("li");
     li.innerText = room;
@@ -109,8 +113,7 @@ socket.on("list_room", (rooms) => {
     ul.append(li);
     li.addEventListener("click", () => {
       roomName = room;
-      socket.on("enter_room", roomName);
-      searchPart.hidden = true;
+      socket.emit("enter_room", roomName, showRoom);
     });
   });
 });
